@@ -3,9 +3,15 @@ package com.testintergateai
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import com.testintergateai.presentaion.screen.main.MainScreen
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Surface
+import androidx.compose.ui.Modifier
+import androidx.navigation.compose.rememberNavController
+import com.testintergateai.presentaion.navigation_graph.RootNavGraph
 import com.testintergateai.presentaion.ui.theme.TestIntergateAITheme
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -13,7 +19,9 @@ class MainActivity : ComponentActivity() {
         setContent {
             TestIntergateAITheme {
                 // A surface container using the 'background' color from the theme
-                MainScreen()
+                Surface(modifier = Modifier.fillMaxSize()) {
+                    RootNavGraph(navController = rememberNavController())
+                }
             }
         }
     }

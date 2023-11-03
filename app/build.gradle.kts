@@ -1,6 +1,8 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    kotlin("kapt")
+    id("com.google.dagger.hilt.android")
 }
 
 android {
@@ -10,7 +12,7 @@ android {
     defaultConfig {
         applicationId = "com.testintergateai"
         minSdk = 28
-        targetSdk = 33
+        targetSdk = 34
         versionCode = 1
         versionName = "1.0"
 
@@ -27,11 +29,11 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = "17"
     }
     buildFeatures {
         compose = true
@@ -64,9 +66,36 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 
-    implementation("com.google.mlkit:face-detection:16.1.5")
-    implementation("com.google.android.gms:play-services-mlkit-face-detection:17.1.0")
+    /**
+     * Kotlin-coroutine
+     * */
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 
+    /**
+     * JSON
+     * */
+    implementation("com.google.code.gson:gson:2.10.1")
+
+    /**
+     * Dagger Hilt
+     * */
+    implementation("com.google.dagger:hilt-android:2.48.1")
+    kapt("com.google.dagger:hilt-android-compiler:2.48.1")
+
+    /**
+     * Navigation component
+     * */
+    implementation("androidx.navigation:navigation-compose:2.7.4")
+    implementation("androidx.hilt:hilt-navigation-compose:1.0.0")
+
+    /*
+    * Permisstion
+    * */
+    implementation("com.google.accompanist:accompanist-permissions:0.31.6-rc")
+
+    /*
+    * Camera X
+    * */
     implementation("androidx.camera:camera-core:1.4.0-alpha02")
     implementation("androidx.camera:camera-camera2:1.4.0-alpha02")
     implementation("androidx.camera:camera-lifecycle:1.4.0-alpha02")
@@ -74,12 +103,18 @@ dependencies {
     implementation("androidx.camera:camera-view:1.4.0-alpha02")
     implementation("androidx.camera:camera-extensions:1.4.0-alpha02")
 
+    /*
+    * ML Kit
+    * */
+    implementation("com.google.mlkit:face-detection:16.1.5")
+    implementation("com.google.android.gms:play-services-mlkit-face-detection:17.1.0")
+
+    /*
+    * TensorFlow Lite
+    * */
+    implementation("org.tensorflow:tensorflow-lite:2.12.0")
+    implementation("org.tensorflow:tensorflow-lite-gpu:2.11.0")
+    implementation("org.tensorflow:tensorflow-lite-support:0.4.3")
     implementation("org.tensorflow:tensorflow-lite-task-vision:0.4.0")
     implementation("org.tensorflow:tensorflow-lite-gpu-delegate-plugin:0.4.0")
-    implementation("org.tensorflow:tensorflow-lite-gpu:2.11.0")
-
-    implementation("com.google.accompanist:accompanist-permissions:0.31.6-rc")
-
-    implementation("androidx.navigation:navigation-compose:2.7.4")
-    implementation("androidx.hilt:hilt-navigation-compose:1.0.0")
 }

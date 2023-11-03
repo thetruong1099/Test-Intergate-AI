@@ -1,5 +1,6 @@
-package com.testintergateai.presentaion.screen.no_permission
+package com.testintergateai.presentaion.screen.start_screen
 
+import android.Manifest
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,11 +11,31 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.PermissionState
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
+import com.testintergateai.R
+
+@OptIn(ExperimentalPermissionsApi::class)
+@Composable
+fun StartScreen(
+    navigateToMainScreen: () -> Unit
+) {
+    val cameraPermissionState: PermissionState = rememberPermissionState(permission = Manifest.permission.CAMERA)
+
+    if (cameraPermissionState.status.isGranted) {
+        navigateToMainScreen.invoke()
+    } else {
+        NoPermissionCompose(onRequestPermission = cameraPermissionState::launchPermissionRequest)
+    }
+}
 
 @Composable
-fun NoPermissionScreen(
+fun NoPermissionCompose(
     onRequestPermission: () -> Unit
 ) {
     Box(
@@ -30,10 +51,11 @@ fun NoPermissionScreen(
         ) {
             Text(
                 textAlign = TextAlign.Center,
-                text = "Please grant the permission to use the camera to use the core functionality of this app."
+                text = stringResource(id = R.string.camera_permission_request)
             )
+
             Button(onClick = onRequestPermission) {
-                Text(text = "Grant permission")
+                Text(text = stringResource(id = R.string.grant_permission))
             }
         }
     }

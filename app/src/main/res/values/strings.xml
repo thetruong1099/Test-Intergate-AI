@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Test Intergate AI</string>
+    <string name="camera_permission_request">Vui lòng cấp quyền sử dụng máy ảnh để sử dụng chức năng cốt lõi của ứng dụng này.</string>
+    <string name="grant_permission">Cấp Quyền</string>
 </resources>

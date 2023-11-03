@@ -1,13 +1,14 @@
 package com.testintergateai.presentaion.screen.camera
 
-import android.util.Log
-import androidx.camera.core.Camera
+import android.util.Size
+import androidx.camera.core.CameraSelector
+import androidx.camera.core.ImageAnalysis
+import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.view.CameraController
-import androidx.camera.view.LifecycleCameraController
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -26,118 +27,107 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
-import com.testintergateai.presentaion.utils.FaceDetectionAnalyzer
+import com.testintergateai.data.TfLiteLandmarkClassifier
+import com.testintergateai.presentaion.utils.FaceDetectionAnalyzer2
 
 @Composable
 fun CameraScreen(
     viewModel: CameraViewModel
 ) {
+    Content2()
+}
 
+@Composable
+fun Content2() {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
-
-    var bitmap by remember {
+    val cameraProviderFuture = remember(context) { ProcessCameraProvider.getInstance(context) }
+    var listRect by remember {
+        mutableStateOf(listOf(android.graphics.Rect()))
+    }
+    var imageBitmap by remember {
         mutableStateOf<ImageBitmap?>(null)
     }
 
-    val analyzer = remember {
-        FaceDetectionAnalyzer(
-            faceDetected = {
-                Log.d("DevLog", "CameraScreen: $it")
-            },
-            onResult = { result ->
-                bitmap = result.asImageBitmap()
-//            viewModel.onFaceDetected(result)
-            }
-        )
-    }
-
-    val controller = remember {
-        LifecycleCameraController(context).apply {
-            setEnabledUseCases(CameraController.IMAGE_ANALYSIS)
-            setImageAnalysisAnalyzer(
-                ContextCompat.getMainExecutor(context),
-                analyzer
-            )
-        }
-    }
-
-    val cameraProviderFuture = remember(context) { ProcessCameraProvider.getInstance(context) }
-
-    val cameraProvider = remember(cameraProviderFuture) { cameraProviderFuture.get() }
-    var camera: Camera? by remember { mutableStateOf(null) }
-
     Column(modifier = Modifier.fillMaxSize()) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+        ) {
+            AndroidView(
+                modifier = Modifier.fillMaxSize(),
+                factory = { context ->
+                    val previewView = PreviewView(context)
 
-        bitmap?.let {
-            Image(bitmap = it, contentDescription = "")
-        }
+                    val executor = ContextCompat.getMainExecutor(context)
 
+                    cameraProviderFuture.addListener({
+                        val cameraProvider = cameraProviderFuture.get()
+                        val preview = Preview.Builder().build().also {
+                            it.setSurfaceProvider(previewView.surfaceProvider)
+                        }
 
-        AndroidView(
-            modifier = Modifier.fillMaxSize(),
-            factory = {
-                PreviewView(it).apply {
-                    this.controller = controller
-                    controller.bindToLifecycle(lifecycleOwner)
-                }
-            })
+                        val cameraSelector = CameraSelector.Builder()
+                            .requireLensFacing(CameraSelector.LENS_FACING_BACK)
+                            .build()
 
-        /*AndroidView(
-            modifier = Modifier.fillMaxSize(),
-            factory = { context ->
-                val previewView = PreviewView(context)
-                val preview = Preview.Builder().build()
-                val selector = CameraSelector.Builder()
-                    .requireLensFacing(CameraSelector.LENS_FACING_BACK)
-                    .build()
-                preview.setSurfaceProvider(previewView.surfaceProvider)
-                val imageAnalysis = ImageAnalysis.Builder()
-                    .setTargetResolution(
-                        Size(
-                            previewView.width,
-                            previewView.height
+                        val imageAnalysis = ImageAnalysis.Builder()
+                            .setTargetResolution(Size(previewView.width, previewView.height))
+                            .setBackpressureStrategy(ImageAnalysis.STRATEGY_BLOCK_PRODUCER)
+                            .setImageQueueDepth(10)
+                            .build()
+                            .apply {
+                                setAnalyzer(
+                                    executor,
+                                    FaceDetectionAnalyzer2(
+                                        classifier = TfLiteLandmarkClassifier(
+                                            context = context
+                                        ),
+                                        onResult = {
+                                            listRect = it
+                                        },
+                                        getImageFace = {
+                                            imageBitmap = it?.asImageBitmap()
+                                        }
+                                    )
+                                )
+                            }
+
+                        cameraProvider.unbindAll()
+                        cameraProvider.bindToLifecycle(
+                            lifecycleOwner,
+                            cameraSelector,
+                            preview,
+                            imageAnalysis
                         )
-                    )
-                    .setBackpressureStrategy(ImageAnalysis.STRATEGY_BLOCK_PRODUCER)
-                    .build()
 
-                imageAnalysis.setAnalyzer(
-                    ContextCompat.getMainExecutor(context),
-                    FaceDetectionAnalyzer { result ->
-                        viewModel.onFaceDetected(result)
-                    }
-                )
+                    }, executor)
 
-                try {
-                    cameraProvider.unbindAll()
-                    camera = cameraProvider.bindToLifecycle(
-                        lifecycleOwner,
-                        selector,
-                        preview,
-                        imageAnalysis
-                    )
-                } catch (e: Exception) {
-                    e.printStackTrace()
+                    previewView
                 }
-
-                previewView
-            }
-        )*/
-
-        Canvas(modifier = Modifier) {
-            val paint = Paint()
-            paint.color = Color.Red
-            paint.style = PaintingStyle.Stroke
-            paint.strokeWidth = 10f
-            val rect = Rect(
-                left = viewModel.faceBounds.value.left.toFloat(),
-                right = viewModel.faceBounds.value.right.toFloat(),
-                top = viewModel.faceBounds.value.top.toFloat(),
-                bottom = viewModel.faceBounds.value.bottom.toFloat()
             )
 
-            this.drawContext.canvas.drawRect(rect, paint)
+            listRect.forEach { rect ->
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    val paint = Paint()
+                    paint.color = Color.Red
+                    paint.style = PaintingStyle.Stroke
+                    paint.strokeWidth = 5f
+
+                    val rect = Rect(
+                        left = rect.left.toFloat(),
+                        right = rect.right.toFloat(),
+                        top = rect.top.toFloat(),
+                        bottom = rect.bottom.toFloat()
+                    )
+
+                    this.drawContext.canvas.drawRect(rect, paint)
+                }
+            }
+        }
+
+        imageBitmap?.let {
+            Image(bitmap = it, contentDescription = "")
         }
     }
 }

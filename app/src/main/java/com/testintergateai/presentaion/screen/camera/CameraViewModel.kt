@@ -7,10 +7,10 @@ import androidx.lifecycle.ViewModel
 
 class CameraViewModel : ViewModel() {
 
-    private val _face_detected_rect = mutableStateOf(Rect())
-    val faceBounds: State<Rect> = _face_detected_rect
+    private val _face_detected_rect = mutableStateOf(listOf(Rect()))
+    val faceBounds: State<List<Rect>> = _face_detected_rect
 
-    fun onFaceDetected(bounds: Rect){
+    fun onFaceDetected(bounds: List<Rect>) {
         _face_detected_rect.value = bounds
     }
 }

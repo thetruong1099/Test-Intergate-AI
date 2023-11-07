@@ -67,6 +67,11 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 
     /**
+     * Ui
+     * */
+    implementation("androidx.constraintlayout:constraintlayout-compose:1.0.1")
+
+    /**
      * Kotlin-coroutine
      * */
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
@@ -113,8 +118,8 @@ dependencies {
     * TensorFlow Lite
     * */
     implementation("org.tensorflow:tensorflow-lite:2.12.0")
-    implementation("org.tensorflow:tensorflow-lite-gpu:2.11.0")
+    implementation("org.tensorflow:tensorflow-lite-gpu:2.12.0")
     implementation("org.tensorflow:tensorflow-lite-support:0.4.3")
-    implementation("org.tensorflow:tensorflow-lite-task-vision:0.4.0")
+    implementation("org.tensorflow:tensorflow-lite-task-vision:0.4.3")
     implementation("org.tensorflow:tensorflow-lite-gpu-delegate-plugin:0.4.0")
 }

@@ -6,13 +6,15 @@ import com.testintergateai.presentaion.screen.start_screen.StartScreen
 import com.testintergateai.presentaion.utils.Screen
 
 fun NavGraphBuilder.startScreen(
-    navigateToMainScreen: () -> Unit
+    navigateToRecognitionScreen: () -> Unit,
+    navigateToAddFaceScreen: () -> Unit
 ) {
     composable(
         route = Screen.StartScreen.route
     ) {
         StartScreen(
-            navigateToMainScreen = { navigateToMainScreen.invoke() }
+            navigateToRecognitionScreen = { navigateToRecognitionScreen.invoke() },
+            navigateToAddFaceScreen = { navigateToAddFaceScreen.invoke() }
         )
     }
 }

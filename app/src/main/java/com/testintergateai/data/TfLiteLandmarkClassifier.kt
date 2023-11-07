@@ -2,6 +2,7 @@ package com.testintergateai.data
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.util.Log
 import android.view.Surface
 import com.testintergateai.domain.Classification
 import com.testintergateai.domain.LandmarkClassifier
@@ -23,6 +24,7 @@ class TfLiteLandmarkClassifier(
         val baseOptions = BaseOptions.builder()
             .setNumThreads(2)
             .build()
+
         val options = ImageClassifier.ImageClassifierOptions.builder()
             .setBaseOptions(baseOptions)
             .setMaxResults(maxResults)
@@ -32,11 +34,12 @@ class TfLiteLandmarkClassifier(
         try {
             classifier = ImageClassifier.createFromFileAndOptions(
                 context,
-                "mobile_face_net.tflite",
+                "model_face_test.tflite",
                 options
             )
         } catch (e: IllegalStateException) {
             e.printStackTrace()
+            Log.d("DevLog", "setupClassifier error: ${e.message}")
         }
     }
 
@@ -53,7 +56,7 @@ class TfLiteLandmarkClassifier(
             .build()
 
         val results = classifier?.classify(tensorImage, imageProcessingOptions)
-
+        Log.d("DevLog", "classify: $results")
         return results?.flatMap { classications ->
             classications.categories.map { category ->
                 Classification(

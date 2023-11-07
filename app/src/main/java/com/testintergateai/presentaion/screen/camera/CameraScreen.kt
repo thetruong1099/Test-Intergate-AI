@@ -1,5 +1,12 @@
 package com.testintergateai.presentaion.screen.camera
 
+import android.content.ContentValues
+import android.content.Context
+import android.graphics.Bitmap
+import android.net.Uri
+import android.os.Build
+import android.os.Environment
+import android.provider.MediaStore
 import android.util.Size
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
@@ -10,7 +17,11 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -22,13 +33,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.PaintingStyle
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import com.testintergateai.data.TfLiteLandmarkClassifier
 import com.testintergateai.presentaion.utils.FaceDetectionAnalyzer2
+import com.testintergateai.presentaion.utils.toListImageBitmap
+import java.io.File
+import java.io.FileOutputStream
+import java.io.OutputStream
 
 @Composable
 fun CameraScreen(
@@ -45,17 +59,19 @@ fun Content2() {
     var listRect by remember {
         mutableStateOf(listOf(android.graphics.Rect()))
     }
-    var imageBitmap by remember {
-        mutableStateOf<ImageBitmap?>(null)
+    var imageBitmaps by remember {
+        mutableStateOf<List<ImageBitmap?>>(listOf())
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
         Box(
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxWidth()
+                .fillMaxHeight(0.5f)
         ) {
             AndroidView(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize(),
                 factory = { context ->
                     val previewView = PreviewView(context)
 
@@ -80,14 +96,23 @@ fun Content2() {
                                 setAnalyzer(
                                     executor,
                                     FaceDetectionAnalyzer2(
+                                        context = context,
                                         classifier = TfLiteLandmarkClassifier(
                                             context = context
                                         ),
                                         onResult = {
                                             listRect = it
                                         },
-                                        getImageFace = {
-                                            imageBitmap = it?.asImageBitmap()
+                                        getImageFace = { bitmaps ->
+                                            imageBitmaps = bitmaps.toListImageBitmap()
+                                            //Log.d("DevLog", "Content2: $bitmaps")
+//                                            CoroutineScope(Dispatchers.IO).launch {
+//                                                bitmaps.forEach {
+//                                                    it?.let {
+//                                                        saveToStorage(context = context, bitmap = it)
+//                                                    }
+//                                                }
+//                                            }
                                         }
                                     )
                                 )
@@ -126,8 +151,45 @@ fun Content2() {
             }
         }
 
-        imageBitmap?.let {
-            Image(bitmap = it, contentDescription = "")
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxWidth()
+        ) {
+            items(items = imageBitmaps) { item ->
+                item?.let {
+                    Image(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .fillMaxHeight(0.5f), bitmap = item, contentDescription = ""
+                    )
+                }
+            }
         }
+    }
+}
+
+private fun saveToStorage(context: Context, bitmap: Bitmap) {
+    val imageName = "${System.currentTimeMillis()}.jpg"
+    var fos: OutputStream? = null
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        context.contentResolver?.also { resolver ->
+            val contentValues = ContentValues().apply {
+                put(MediaStore.MediaColumns.DISPLAY_NAME, imageName)
+                put(MediaStore.MediaColumns.MIME_TYPE, "image/jpg")
+                put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES)
+            }
+            val imageUri: Uri? = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+            fos = imageUri?.let {
+                resolver.openOutputStream(it)
+            }
+        }
+    } else {
+        val imageDirectory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
+        val image = File(imageDirectory, imageName)
+        fos = FileOutputStream(image)
+    }
+
+    fos?.use {
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, it)
     }
 }

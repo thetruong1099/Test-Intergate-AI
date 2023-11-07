@@ -3,7 +3,9 @@ package com.testintergateai.presentaion.utils
 import android.graphics.Bitmap
 import android.graphics.Matrix
 import android.graphics.Rect
+import androidx.compose.ui.graphics.asImageBitmap
 import com.google.mlkit.vision.face.Face
+import kotlin.math.abs
 
 fun Bitmap.centerCrop(desiredWidth: Int, desiredHeight: Int): Bitmap {
     val xStart = (width - desiredWidth) / 2
@@ -90,10 +92,13 @@ fun Face.getFaceRect(bitmap: Bitmap): Rect {
 fun List<Face>.toListRect(bitmap: Bitmap) = map { it.getFaceRect(bitmap) }
 
 fun List<Face>.toListRect() = map { it.boundingBox }
+fun List<Face>.toListBitmap(bitmap: Bitmap) =
+    map { bitmap.cropRectFromBitmap(it.boundingBox).resizedForTfLite() }
+
+fun List<Bitmap?>.toListImageBitmap() = map { it?.asImageBitmap() }
 
 fun Bitmap.cropToBox(boundingBox: Rect, rotation: Int): Bitmap? {
     var image = this
-    val shift = 0
     if (rotation != 0) {
         val matrix = Matrix()
         matrix.postRotate(rotation.toFloat())
@@ -108,11 +113,34 @@ fun Bitmap.cropToBox(boundingBox: Rect, rotation: Int): Bitmap? {
         Bitmap.createBitmap(
             image,
             boundingBox.left,
-            boundingBox.top + shift,
+            boundingBox.top,
             boundingBox.width(),
             boundingBox.height()
         )
     } else null
+}
+
+fun Bitmap.cropRectFromBitmap(rect: Rect): Bitmap {
+    var width = rect.width()
+    var height = rect.height()
+    rect.left = if (rect.left > 0) rect.left else 0
+    rect.top = if (rect.top > 0) rect.top else 0
+    if ((rect.left + width) > this.width) {
+        width = abs(this.width - rect.left)
+    }
+    if ((rect.top + height) > this.height) {
+        height = abs(this.height - rect.top)
+    }
+    val croppedBitmap = Bitmap.createBitmap(this, rect.left, rect.top, width, height)
+    // Uncomment the below line if you want to save the input image.
+    // BitmapUtils.saveBitmap( context , croppedBitmap , "source" )
+    return croppedBitmap
+}
+
+fun Bitmap.rotateBitmap(degrees: Float): Bitmap {
+    val matrix = Matrix()
+    matrix.postRotate(degrees)
+    return Bitmap.createBitmap(this, 0, 0, this.width, this.height, matrix, false)
 }
 
 fun Bitmap.resizedForTfLite(): Bitmap {
@@ -120,6 +148,15 @@ fun Bitmap.resizedForTfLite(): Bitmap {
         this,
         321,
         321,
+        true
+    )
+}
+
+fun Bitmap.resizedForTfLite112(): Bitmap {
+    return Bitmap.createScaledBitmap(
+        this,
+        112,
+        112,
         true
     )
 }
